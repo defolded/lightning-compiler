@@ -33,7 +33,7 @@ public:
 
         size_t start = 0;
         for (size_t i = 0; i < m_src.length(); ++i) {
-            if (std::isspace(m_src[i]) || m_src[i] == '.') {
+            if (std::isspace(m_src[i]) || m_src[i] == '.' || m_src[i] == ',') {
                 // Token found, extract substring
                 if (start != i) { // Check if there's content to extract
                     temp.push_back(m_src.substr(start, i - start));
@@ -58,6 +58,9 @@ public:
                     std::cout << temp[i + 2] << " pushed back\n";
                     tokens.push_back({ .type = TokenType::int_lit, .value = temp[i + 2] });
                     i += 2;
+                } else {
+                    std::cout << temp[i] << " pushed back\n";
+                    tokens.push_back({ .type = TokenType::ident, .value = temp[i] });
                 }
             }
         }

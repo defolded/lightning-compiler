@@ -82,9 +82,11 @@ public:
                     && peek(1).value().type == TokenType::eq && peek(2).has_value()
                     && peek(2).value().type == TokenType::int_lit) {
             auto stmt_eq = NodeStmtEq { .ident = consume() };
+            consume();
             if (auto expr = parse_expr()) {
                 stmt_eq.expr = expr.value();
             } else {
+                std::cerr << "i am here";
                 exit(EXIT_FAILURE);
             }
             return NodeStmt { .var = stmt_eq };
