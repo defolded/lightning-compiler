@@ -8,6 +8,8 @@
 enum class TokenType {
     _return,
     int_lit,
+    var,
+    ident
 };
 
 struct Token {
@@ -40,11 +42,30 @@ public:
             }
         }
 
-        for (const std::string& token : temp) {
-            if (token == "повернути") {
+//        for (const std::string& token : temp) {
+//            if (token == "повернути") {
+//                tokens.push_back({ .type = TokenType::_return });
+//            } else if (token >= "0" && token <= "9999") {
+//                if (tokens+1 = "буде")
+//                tokens.push_back({ .type = TokenType::int_lit, .value = token });
+//            }
+//        }
+
+        for (size_t i = 0; i < temp.size(); ++i) {
+            if (temp[i] == "повернути") {
+                std::cout << temp[i] << " pushed back\n";
                 tokens.push_back({ .type = TokenType::_return });
-            } else if (token >= "0" && token <= "9999") {
-                tokens.push_back({ .type = TokenType::int_lit, .value = token });
+            } else if (temp[i] >= "0" && temp[i] <= "9999") {
+                std::cout << temp[i] << " pushed back\n";
+                tokens.push_back({ .type = TokenType::int_lit, .value = temp[i] });
+            } else {
+                if (i < (temp.size() - 2) && temp[i + 1] == "буде") {
+                    std::cout << temp[i] << " pushed back\n";
+                    tokens.push_back({ .type = TokenType::ident, .value = temp[i] });
+                    tokens.push_back({ .type = TokenType::var });
+                    tokens.push_back({ .type = TokenType:: });
+                    i += 2;
+                }
             }
         }
 

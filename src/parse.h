@@ -24,11 +24,12 @@ private:
         return m_tokens.at(m_index++);
     }
 
-    [[nodiscard]] std::optional<Token> peek() const {
-        if (m_index >= m_tokens.size())
+    [[nodiscard]] std::optional<Token> peek(const int offset = 0) const
+    {
+        if (m_index + offset >= m_tokens.size()) {
             return {};
-
-        return m_tokens.at(m_index);
+        }
+        return m_tokens.at(m_index + offset);
     }
 
 public:
@@ -54,6 +55,8 @@ public:
                 } else {
                     exit(EXIT_FAILURE);
                 }
+            } else if (peek(2).has_value() && peek(1).value().type == TokenType::var) {
+                
             }
         }
         m_index = 0;
