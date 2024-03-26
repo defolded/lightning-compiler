@@ -4,15 +4,37 @@
 #include <string>
 #include <optional>
 #include <iostream>
+#include <variant>
 
 #include "./tokenize.h"
 
-struct NodeExpr {
+struct NodeExprIntLit {
     Token int_lit;
 };
 
-struct NodeReturn {
+struct NodeExprIdent {
+    Token ident;
+};
+
+struct NodeExpr {
+    std::variant<NodeExprIntLit, NodeExprIdent> var;
+};
+
+struct NodeStmtReturn {
     NodeExpr expr;
+};
+
+struct NodeStmtEq {
+    Token ident;
+    NodeExpr expr;
+};
+
+struct NodeStmt {
+    std::variant<NodeStmtReturn, NodeStmtEq> var;
+};
+
+struct NodeProgram {
+    std::vector<NodeStmt> stmts;
 };
 
 class Parse {
@@ -40,26 +62,47 @@ public:
     std::optional<NodeExpr> parse_expr() {
         if(peek().has_value() && peek().value().type == TokenType::int_lit) {
             return NodeExpr {
-                .int_lit = consume()
+                .var = NodeExprIntLit { .int_lit = consume() }
             };
+        } else if (peek().has_value() && peek().value().type == TokenType::ident) {
+            return NodeExpr { .var = NodeExprIdent { .ident = consume() } };
+        }
+        return {};
+    }
+
+    std::optional<NodeStmt> parse_stmt() {
+        if (peek().has_value() && peek().value().type == TokenType::_return) {
+            consume();
+            NodeStmtReturn stmt_return;
+            if (auto node_expr = parse_expr()) {
+                stmt_return = { .expr = node_expr.value() };
+            }
+            return NodeStmt { .var = stmt_return };
+        } else if (peek().has_value() && peek().value().type == TokenType::ident && peek(1).has_value()
+                    && peek(1).value().type == TokenType::eq && peek(2).has_value()
+                    && peek(2).value().type == TokenType::int_lit) {
+            auto stmt_eq = NodeStmtEq { .ident = consume() };
+            if (auto expr = parse_expr()) {
+                stmt_eq.expr = expr.value();
+            } else {
+                exit(EXIT_FAILURE);
+            }
+            return NodeStmt { .var = stmt_eq };
+        }
+        else {
+            return {};
         }
     }
 
-    std::optional<NodeReturn> parse() {
-        std::optional<NodeReturn> return_node;
+    std::optional<NodeProgram> parse_prog() {
+        NodeProgram prog;
         while(peek().has_value()) {
-            if (peek().value().type == TokenType::_return) {
-                consume();
-                if (auto node_expr = parse_expr()) {
-                    return_node = NodeReturn { .expr = node_expr.value() };
-                } else {
-                    exit(EXIT_FAILURE);
-                }
-            } else if (peek(2).has_value() && peek(1).value().type == TokenType::var) {
-                
+            if (auto stmt = parse_stmt()) {
+                prog.stmts.push_back(stmt.value());
+            } else {
+                exit(EXIT_FAILURE);
             }
         }
-        m_index = 0;
-        return return_node;
+        return prog;
     }
 };

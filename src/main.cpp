@@ -23,13 +23,13 @@ int main(int argc, char* argv[]) {
     std::vector<Token> tokens = tokenize.tokenizeString();
 
     Parse parse(std::move(tokens));
-    std::optional<NodeReturn> tree = parse.parse();
+    std::optional<NodeProgram> prog = parse.parse_prog();
 
-    if (!tree.has_value()) {
+    if (!prog.has_value()) {
         exit(EXIT_FAILURE);
     }
 
-    Generate generate(tree.value());
+    Generate generate(prog.value());
     std::fstream file("out.asm", std::ios::out);
     file << generate.generate();
     file.close();

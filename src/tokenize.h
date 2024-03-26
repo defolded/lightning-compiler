@@ -8,7 +8,7 @@
 enum class TokenType {
     _return,
     int_lit,
-    var,
+    eq,
     ident
 };
 
@@ -42,28 +42,21 @@ public:
             }
         }
 
-//        for (const std::string& token : temp) {
-//            if (token == "повернути") {
-//                tokens.push_back({ .type = TokenType::_return });
-//            } else if (token >= "0" && token <= "9999") {
-//                if (tokens+1 = "буде")
-//                tokens.push_back({ .type = TokenType::int_lit, .value = token });
-//            }
-//        }
-
         for (size_t i = 0; i < temp.size(); ++i) {
-            if (temp[i] == "повернути") {
+            if (temp[i] == "повернути") { // return statement
                 std::cout << temp[i] << " pushed back\n";
                 tokens.push_back({ .type = TokenType::_return });
-            } else if (temp[i] >= "0" && temp[i] <= "9999") {
+            } else if (temp[i] >= "0" && temp[i] <= "9999") { // std::isdigit()
                 std::cout << temp[i] << " pushed back\n";
                 tokens.push_back({ .type = TokenType::int_lit, .value = temp[i] });
             } else {
-                if (i < (temp.size() - 2) && temp[i + 1] == "буде") {
+                if (i < (temp.size() - 2) && temp[i + 1] == "буде") { // See if the word ahead is a variable declaration
                     std::cout << temp[i] << " pushed back\n";
                     tokens.push_back({ .type = TokenType::ident, .value = temp[i] });
-                    tokens.push_back({ .type = TokenType::var });
-                    tokens.push_back({ .type = TokenType:: });
+                    std::cout << temp[i + 1] << " pushed back\n";
+                    tokens.push_back({ .type = TokenType::eq });
+                    std::cout << temp[i + 2] << " pushed back\n";
+                    tokens.push_back({ .type = TokenType::int_lit, .value = temp[i + 2] });
                     i += 2;
                 }
             }
