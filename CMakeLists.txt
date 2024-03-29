@@ -7,4 +7,6 @@ set(CMAKE_CXX_STANDARD 23)
 add_executable(lt src/main.cpp
         src/tokenize.h
         src/parse.h
-        src/generate.h)
+        src/generate.h
+        src/lib/shunting_yard.hpp
+)

@@ -5,11 +5,13 @@
 #include <optional>
 #include <iostream>
 
+#include "./lib/shunting_yard.hpp"
+
 enum class TokenType {
     _return,
     int_lit,
     eq,
-    ident
+    ident,
 };
 
 struct Token {
@@ -20,6 +22,7 @@ struct Token {
 class Tokenize {
 private:
     std::string m_src;
+    const std::vector<std::string> op {"+", "-", "/", "*", "^"};
 
 public:
     explicit Tokenize(std::string str)
@@ -43,21 +46,37 @@ public:
         }
 
         for (size_t i = 0; i < temp.size(); ++i) {
-            if (temp[i] == "повернути") { // return statement
+            if (temp[i] == "повернути") { // end program statement
                 std::cout << temp[i] << " pushed back\n";
                 tokens.push_back({ .type = TokenType::_return });
             } else if (temp[i] >= "0" && temp[i] <= "9999") { // std::isdigit()
-                std::cout << temp[i] << " pushed back\n";
-                tokens.push_back({ .type = TokenType::int_lit, .value = temp[i] });
+                if (std::find(op.begin(), op.end(), temp[i + 1]) != op.end()) {
+                    std::string in;
+                    in += temp[i];
+                    in += temp[i + 1];
+                    in += temp[i + 2];
+                    ShuntingYard::RPN rpn = ShuntingYard::reversePolishNotation(in.c_str());
+                    ShuntingYard::Node *tree = ShuntingYard::parse(rpn);
+                    int res = static_cast<int>(ShuntingYard::eval(tree));
+                    std::cout << "res: " << res << " pushed back\n";
+                    tokens.push_back({.type = TokenType::int_lit, .value = std::to_string(res)});
+                    i += 2;
+                } else {
+                    std::cout << temp[i] << " pushed back\n";
+                    tokens.push_back({.type = TokenType::int_lit, .value = temp[i]});
+                }
             } else {
                 if (i < (temp.size() - 2) && temp[i + 1] == "буде") { // See if the word ahead is a variable declaration
                     std::cout << temp[i] << " pushed back\n";
                     tokens.push_back({ .type = TokenType::ident, .value = temp[i] });
                     std::cout << temp[i + 1] << " pushed back\n";
                     tokens.push_back({ .type = TokenType::eq });
-                    std::cout << temp[i + 2] << " pushed back\n";
-                    tokens.push_back({ .type = TokenType::int_lit, .value = temp[i + 2] });
-                    i += 2;
+                    if (i < (temp.size() - 4) && std::find(op.begin(), op.end(), temp[i + 3]) == op.end()) {
+                        std::cout << temp[i + 2] << " pushed back\n";
+                        tokens.push_back({ .type = TokenType::int_lit, .value = temp[i + 2] });
+                        i += 2;
+                    }
+                    i += 1;
                 } else {
                     std::cout << temp[i] << " pushed back\n";
                     tokens.push_back({ .type = TokenType::ident, .value = temp[i] });

@@ -86,7 +86,7 @@ public:
             if (auto expr = parse_expr()) {
                 stmt_eq.expr = expr.value();
             } else {
-                std::cerr << "i am here";
+                std::cerr << "\n\nParse expression failed.\n\n";
                 exit(EXIT_FAILURE);
             }
             return NodeStmt { .var = stmt_eq };
@@ -102,6 +102,7 @@ public:
             if (auto stmt = parse_stmt()) {
                 prog.stmts.push_back(stmt.value());
             } else {
+                std::cerr << "\n\nParsing failed.\n\n";
                 exit(EXIT_FAILURE);
             }
         }
