@@ -2,7 +2,7 @@
 
 #include <string>
 #include <sstream>
-#include <unordered_map>
+#include <ranges>
 
 #include "parse.h"
 
@@ -23,10 +23,11 @@ private:
     }
 
     struct Var {
+        std::string name;
         size_t stack_loc;
     };
 
-    std::unordered_map<std::string, Var> m_vars{};
+    std::vector<Var> m_vars{};
 
 public:
     explicit Generate(NodeProgram prog)
@@ -43,12 +44,15 @@ public:
             }
 
             void operator()(const NodeExprIdent& expr_ident) const {
-               if (!g->m_vars.contains(expr_ident.ident.value.value())) {
+                const auto it = std::ranges::find_if(g->m_vars, [&](const Var& var) {
+                    return var.name == expr_ident.ident.value.value();
+                });
+               if (it == g->m_vars.end()) {
+                   std::cerr << "Cannot find value in expr_ident\n";
                    exit(EXIT_FAILURE);
                }
-               const auto& v = g->m_vars.at(expr_ident.ident.value.value());
                std::stringstream ss;
-               ss << "QWORD [rsp + " << (g->m_stack_size - v.stack_loc - 1) * 8 << "]\n";
+               ss << "QWORD [rsp + " << (g->m_stack_size - it->stack_loc - 1) * 8 << "]\n";
                g->push(ss.str());
             }
         };
@@ -69,10 +73,16 @@ public:
             }
 
             void operator()(const NodeStmtEq& stmt_eq) const {
-                if (g->m_vars.contains(stmt_eq.ident.value.value())) {
+                g->m_vars.push_back({ .name = stmt_eq.ident.value.value(), .stack_loc = g->m_stack_size });
+                const auto it = std::ranges::find_if(g->m_vars, [&](const Var& var) {
+                    return var.name == stmt_eq.ident.value.value();
+                });
+                if (it == g->m_vars.end()) {
+                    std::cerr << "Cannot find value in stmt_eq\n";
                     exit(EXIT_FAILURE);
                 }
-                g->m_vars.insert({ stmt_eq.ident.value.value(), Var { .stack_loc = g->m_stack_size }});
+
+                g->m_vars.push_back({ .name = stmt_eq.ident.value.value(), .stack_loc = g->m_stack_size });
                 g->generate_expr(stmt_eq.expr);
             }
         };

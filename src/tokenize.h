@@ -7,11 +7,33 @@
 
 #include "./lib/shunting_yard.hpp"
 
+auto expression(const std::vector<std::string>& tokens, const auto iterator) {
+    auto i = iterator;
+
+    std::string in;
+    in += tokens[i];
+
+    in += tokens[i + 1];
+
+//    if (tokens[i + 2] >= "0" && tokens[i + 2] <= "9999") {
+        in += tokens[i + 2];
+//    } else {
+//        auto it = std::find(tokens.begin(), tokens.end(), tokens[i + 2]);
+//        int index = it - tokens.begin();
+//        ShuntingYard::variables[tokens[i + 2]] = std::stoi(tokens[index + 2]);
+//    }
+
+    ShuntingYard::RPN rpn = ShuntingYard::reversePolishNotation(in.c_str());
+    ShuntingYard::Node *tree = ShuntingYard::parse(rpn);
+
+    return static_cast<int>(ShuntingYard::eval(tree));
+}
+
 enum class TokenType {
     _return,
     int_lit,
     eq,
-    ident,
+    ident
 };
 
 struct Token {
@@ -49,21 +71,18 @@ public:
             if (temp[i] == "повернути") { // end program statement
                 std::cout << temp[i] << " pushed back\n";
                 tokens.push_back({ .type = TokenType::_return });
+                std::cout << temp[i + 1] << " pushed back\n";
+                tokens.push_back({ .type = TokenType::ident, .value = temp[i + 1] });
+                i += 2;
             } else if (temp[i] >= "0" && temp[i] <= "9999") { // std::isdigit()
                 if (std::find(op.begin(), op.end(), temp[i + 1]) != op.end()) {
-                    std::string in;
-                    in += temp[i];
-                    in += temp[i + 1];
-                    in += temp[i + 2];
-                    ShuntingYard::RPN rpn = ShuntingYard::reversePolishNotation(in.c_str());
-                    ShuntingYard::Node *tree = ShuntingYard::parse(rpn);
-                    int res = static_cast<int>(ShuntingYard::eval(tree));
-                    std::cout << "res: " << res << " pushed back\n";
-                    tokens.push_back({.type = TokenType::int_lit, .value = std::to_string(res)});
+                    auto result = expression(temp, i);
+                    std::cout << "res: " << result << " pushed back\n";
+                    tokens.push_back({ .type = TokenType::int_lit, .value = std::to_string(result) });
                     i += 2;
                 } else {
                     std::cout << temp[i] << " pushed back\n";
-                    tokens.push_back({.type = TokenType::int_lit, .value = temp[i]});
+                    tokens.push_back({ .type = TokenType::int_lit, .value = temp[i] });
                 }
             } else {
                 if (i < (temp.size() - 2) && temp[i + 1] == "буде") { // See if the word ahead is a variable declaration
@@ -71,15 +90,54 @@ public:
                     tokens.push_back({ .type = TokenType::ident, .value = temp[i] });
                     std::cout << temp[i + 1] << " pushed back\n";
                     tokens.push_back({ .type = TokenType::eq });
-                    if (i < (temp.size() - 4) && std::find(op.begin(), op.end(), temp[i + 3]) == op.end()) {
+                    if (temp[i + 2] == "(") {
+                        // we have an expression here
+                        std::string in;
+                        size_t nestedIndex = i + 3; // set nestedIndex to the first item in the expr
+                        while (temp[nestedIndex] != ")") {
+                            if (temp[nestedIndex] >= "0" && temp[nestedIndex] <= "9999") {
+                                std::cout << temp[nestedIndex] << " was added to solver\n";
+                                in += temp[nestedIndex];
+                            } else if (std::find(op.begin(), op.end(), temp[nestedIndex]) == op.end()
+                                        && temp[nestedIndex] != "("
+                                        && temp[nestedIndex] != ")") {
+                                auto it = std::find(temp.rbegin(), temp.rend() - 1, temp[nestedIndex]);
+                                int previous_index = std::distance(temp.rbegin(), it);
+                                std::cout << temp[previous_index] << " was added to solver (VARIABLE FOUND)\n";
+                                in += temp[previous_index];
+                            } else if (std::find(op.begin(), op.end(), temp[nestedIndex]) != op.end()){
+                                std::cout << temp[nestedIndex] << " was added to solver\n";
+                                in += temp[nestedIndex];
+                            }
+
+                            nestedIndex += 1;
+                        }
+
+                        ShuntingYard::RPN rpn = ShuntingYard::reversePolishNotation(in.c_str());
+                        ShuntingYard::Node *tree = ShuntingYard::parse(rpn);
+                        auto res = static_cast<int>(ShuntingYard::eval(tree));
+                        tokens.push_back({ .type = TokenType::int_lit, .value = std::to_string(res) });
+
+//                        std::cout << "i index is: " << i << " nested index is: " << nestedIndex << "\n\n\n";
+                        i = nestedIndex;
+                    } else {
                         std::cout << temp[i + 2] << " pushed back\n";
                         tokens.push_back({ .type = TokenType::int_lit, .value = temp[i + 2] });
                         i += 2;
                     }
-                    i += 1;
-                } else {
-                    std::cout << temp[i] << " pushed back\n";
-                    tokens.push_back({ .type = TokenType::ident, .value = temp[i] });
+//                    if (i < (temp.size() - 4)) {
+//                        if (std::find(op.begin(), op.end(), temp[i + 3]) == op.end()) {
+//
+//                        } else if (std::find(temp.begin(), temp.begin() + static_cast<int>(i), temp[i + 2]) != temp.end()
+//                                    && temp[i] <= "0" && temp[i] >= "9999") {
+//                            std::cout << "here is + 2: " << temp[i+2] << '\n';
+//                            auto result = expression(temp, i);
+//                            std::cout << "res: " << result << " pushed back\n";
+//                            tokens.push_back({.type = TokenType::int_lit, .value = std::to_string(result)});
+//                        }
+//                        i += 2;
+//                    }
+//                    i += 1;
                 }
             }
         }
