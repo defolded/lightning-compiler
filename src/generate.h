@@ -3,6 +3,7 @@
 #include <string>
 #include <sstream>
 #include <ranges>
+#include <cassert>
 
 #include "parse.h"
 
@@ -11,6 +12,7 @@ private:
     const NodeProgram m_prog;
     std::stringstream m_out;
     size_t m_stack_size { 0 };
+    int m_label_count { 0 };
 
     void push(const std::string& reg) {
         m_out << "    push " << reg << '\n';
@@ -20,6 +22,12 @@ private:
     void pop(const std::string& reg) {
         m_out << "    pop " << reg << '\n';
         --m_stack_size;
+    }
+
+    std::string create_label() {
+        std::stringstream ss;
+        ss << "label" << m_label_count++;
+        return ss.str();
     }
 
     struct Var {
@@ -84,6 +92,17 @@ public:
 
                 g->m_vars.push_back({ .name = stmt_eq.ident.value.value(), .stack_loc = g->m_stack_size });
                 g->generate_expr(stmt_eq.expr);
+            }
+            void operator()(const NodeStmtTernary& stmt_ternary) const {
+                g->generate_expr(stmt_ternary.expr);
+                g->pop("rax");
+                const std::string label = g->create_label();
+                g->m_out << "    test rax, rax\n";
+                g->m_out << "    jz " << label << '\n';
+                for (const NodeStmt& stmt : stmt_ternary.stmts) {
+                    g->generate_stmts(stmt);
+                }
+                g->m_out << label << ":\n";
             }
         };
 

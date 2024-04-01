@@ -11,7 +11,8 @@ enum class TokenType {
     _return,
     int_lit,
     eq,
-    ident
+    ident,
+    _if,
 };
 
 struct Token {
@@ -51,12 +52,17 @@ public:
                 tokens.push_back({ .type = TokenType::_return });
                 if (temp[i + 1] != "(") {
                     std::cout << temp[i + 1] << " pushed back\n";
-                    tokens.push_back({ .type = TokenType::ident, .value = temp[i + 1] });
-                    i += 2;
+                    tokens.push_back({ .type = TokenType::int_lit, .value = temp[i + 1] });
+                    i += 1;
                 }
             } else if (temp[i] >= "0" && temp[i] <= "9999") { // std::isdigit()
                 std::cout << temp[i] << " pushed back\n";
                 tokens.push_back({ .type = TokenType::int_lit, .value = temp[i] });
+            } else if (temp[i] == "якщо") {
+                std::cout << temp[i] << " pushed back\n";
+                tokens.push_back({ .type = TokenType::_if });
+            } else if (temp[i] == "то") {
+                std::cout << "то\n";
             } else if (temp[i] == "(") {
                 std::string in;
                 size_t nestedIndex = i + 1; // set nestedIndex to the first num in the expr
@@ -93,8 +99,7 @@ public:
                 tokens.push_back({ .type = TokenType::int_lit, .value = std::to_string(res) });
                 temp.erase(temp.begin() + static_cast<int>(i) + 1, temp.begin() + static_cast<int>(nestedIndex) + 1);
                 temp[i] = std::to_string(res);
-            }
-            else {
+            } else {
                 if (i < (temp.size() - 2) && temp[i + 1] == "буде") { // See if the word ahead is a variable declaration
                     std::cout << temp[i] << " pushed back\n";
                     tokens.push_back({ .type = TokenType::ident, .value = temp[i] });

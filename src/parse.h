@@ -8,6 +8,9 @@
 
 #include "./tokenize.h"
 
+struct NodeStmt;
+
+
 struct NodeExprIntLit {
     Token int_lit;
 };
@@ -29,8 +32,13 @@ struct NodeStmtEq {
     NodeExpr expr;
 };
 
+struct NodeStmtTernary {
+    NodeExpr expr;
+    std::vector<NodeStmt> stmts;
+};
+
 struct NodeStmt {
-    std::variant<NodeStmtReturn, NodeStmtEq> var;
+    std::variant<NodeStmtReturn, NodeStmtEq, NodeStmtTernary> var;
 };
 
 struct NodeProgram {
@@ -90,8 +98,17 @@ public:
                 exit(EXIT_FAILURE);
             }
             return NodeStmt { .var = stmt_eq };
-        }
-        else {
+        } else if (peek().has_value() && peek().value().type == TokenType::_if) {
+            consume();
+            NodeStmtTernary stmt_ternary;
+            if (auto node_expr = parse_expr()) {
+                stmt_ternary = { .expr = node_expr.value() };
+            }
+            if (auto stmt = parse_stmt()) {
+                stmt_ternary.stmts.push_back(stmt.value());
+            }
+            return NodeStmt { .var = stmt_ternary };
+        } else {
             return {};
         }
     }
