@@ -1,5 +1,8 @@
 # lightning - a simple programing language I wish I had when I was a kid
 
+Like most kids, I started my programming journey in [`Scratch`](https://en.wikipedia.org/wiki/Scratch_(programming_language)). However, I never found it particularly interesting or exciting for me, since I love to visualize things in my head, and this language did that for me. </br> </br>
+lightning's syntax can be written in my native language. A feature which would've been very helpful to me when I started programming, so I could focus on learning basic programming syntax and logic, without worrying about the difficulties of English when I wasn't yet fluent at it.
+
 ## Installation
 ### Prerequisites
 You need to have these tools installed:
