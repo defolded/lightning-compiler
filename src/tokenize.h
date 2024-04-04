@@ -12,13 +12,62 @@ enum class TokenType {
     int_lit,
     eq,
     ident,
-    _if,
+    _if
 };
 
 struct Token {
     TokenType type;
     std::optional<std::string> value{};
 };
+
+static inline const std::vector<std::string> op {"+", "-", "/", "*", "^"};
+
+void substituteVariableForValue(std::vector<std::string>& temp, size_t& i, std::vector<Token>& tokens, size_t& nestedIndex, std::string& in) {
+    auto it = temp.begin()-1 + static_cast<int>(nestedIndex);
+    int v = 0;
+    while (it != temp.begin() - 1) {
+        if (*it == temp[nestedIndex]) {
+//                    std::cout << temp[(nestedIndex - v - 1) + 2] << " was added to solver (VARIABLE FOUND)\n";
+            in += temp[(nestedIndex - v - 1) + 2];
+            break;
+        } else {
+            ++v;
+            --it;
+        }
+    }
+}
+
+std::optional<int> calculateExpression(std::vector<std::string>& temp, size_t& i, std::vector<Token>& tokens, int doPushBackToken = 1) {
+    std::string in;
+    size_t nestedIndex = i + 1; // set nestedIndex to the first num in the expr
+    while (temp[nestedIndex] != ")") {
+        if (temp[nestedIndex] >= "0" && temp[nestedIndex] <= "9999") {
+//            std::cout << temp[nestedIndex] << " was added to solver\n";
+            in += temp[nestedIndex];
+        } else if (std::find(op.begin(), op.end(), temp[nestedIndex]) == op.end()
+                   && temp[nestedIndex] != "("
+                   && temp[nestedIndex] != ")") {
+            substituteVariableForValue(temp, i, tokens, nestedIndex, in);
+        } else if (std::find(op.begin(), op.end(), temp[nestedIndex]) != op.end()){
+//            std::cout << temp[nestedIndex] << " was added to solver\n";
+            in += temp[nestedIndex];
+        }
+        nestedIndex += 1;
+    }
+
+    ShuntingYard::RPN rpn = ShuntingYard::reversePolishNotation(in.c_str());
+    ShuntingYard::Node *tree = ShuntingYard::parse(rpn);
+    auto res = static_cast<int>(ShuntingYard::eval(tree));
+
+    if (doPushBackToken) {
+        std::cout << std::to_string(res) << " pushed back (SOLVER)\n";
+        tokens.push_back({ .type = TokenType::int_lit, .value = std::to_string(res) });
+        temp.erase(temp.begin() + static_cast<int>(i) + 1, temp.begin() + static_cast<int>(nestedIndex) + 1);
+        temp[i] = std::to_string(res);
+    }
+
+    return res;
+}
 
 class Tokenize {
 private:
@@ -27,7 +76,7 @@ private:
 
 public:
     explicit Tokenize(std::string str)
-        : m_src{ std::move(str) }
+            : m_src{ std::move(str) }
     {}
 
     std::vector<Token> tokenizeString() {
@@ -62,43 +111,33 @@ public:
                 std::cout << temp[i] << " pushed back\n";
                 tokens.push_back({ .type = TokenType::_if });
             } else if (temp[i] == "то") {
-                std::cout << "то\n";
-            } else if (temp[i] == "(") {
-                std::string in;
-                size_t nestedIndex = i + 1; // set nestedIndex to the first num in the expr
-                while (temp[nestedIndex] != ")") {
-                    if (temp[nestedIndex] >= "0" && temp[nestedIndex] <= "9999") {
-                        std::cout << temp[nestedIndex] << " was added to solver\n";
-                        in += temp[nestedIndex];
-                    } else if (std::find(op.begin(), op.end(), temp[nestedIndex]) == op.end()
-                               && temp[nestedIndex] != "("
-                               && temp[nestedIndex] != ")") {
-                        auto it = temp.begin()-1 + static_cast<int>(nestedIndex);
-                        int v = 0;
-                        while (it != temp.begin() - 1) {
-                            if (*it == temp[nestedIndex]) {
-                                std::cout << temp[(nestedIndex - v - 1) + 2] << " was added to solver (VARIABLE FOUND)\n";
-                                in += temp[(nestedIndex - v - 1) + 2];
-                                break;
-                            } else {
-                                ++v;
-                                --it;
-                            }
-                        }
-                    } else if (std::find(op.begin(), op.end(), temp[nestedIndex]) != op.end()){
-                        std::cout << temp[nestedIndex] << " was added to solver\n";
-                        in += temp[nestedIndex];
-                    }
-                    nestedIndex += 1;
+                std::cout << temp[i] << "\n";
+            } else if (temp[i] == "повторити") {
+                std::cout << temp[i] << "\n";
+                // Calculate loop iterations
+                ++i;
+                calculateExpression(temp, i, tokens);
+                ++i;
+                std::vector<std::string> expr;
+                while (temp[i] != ")") {
+                    expr.push_back(temp[i]);
+                    ++i;
                 }
+                expr.emplace_back(")");
+                ++i;
+                auto j = std::stoi(temp[i-expr.size()-1]);
+                int res{ 0 };
+                while (j != 0) {
+                    if (auto r = calculateExpression(expr, i, tokens, 0)) {
+                        res += *r;
+                    };
+                    --j;
+                }
+                std::cout << "hello";
 
-                ShuntingYard::RPN rpn = ShuntingYard::reversePolishNotation(in.c_str());
-                ShuntingYard::Node *tree = ShuntingYard::parse(rpn);
-                auto res = static_cast<int>(ShuntingYard::eval(tree));
-                std::cout << std::to_string(res) << " pushed back\n";
-                tokens.push_back({ .type = TokenType::int_lit, .value = std::to_string(res) });
-                temp.erase(temp.begin() + static_cast<int>(i) + 1, temp.begin() + static_cast<int>(nestedIndex) + 1);
-                temp[i] = std::to_string(res);
+
+            } else if (temp[i] == "(") {
+                calculateExpression(temp, i, tokens);
             } else {
                 if (i < (temp.size() - 2) && temp[i + 1] == "буде") { // See if the word ahead is a variable declaration
                     std::cout << temp[i] << " pushed back\n";
