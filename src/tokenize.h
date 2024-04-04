@@ -22,14 +22,14 @@ struct Token {
 
 static inline const std::vector<std::string> op {"+", "-", "/", "*", "^"};
 
-void substituteVariableForValue(std::vector<std::string>& temp, size_t& i, std::vector<Token>& tokens, size_t& nestedIndex, std::string& in) {
+std::string substituteVariableForValue(std::vector<std::string>& temp, size_t& i, std::vector<Token>& tokens, size_t& nestedIndex) {
     auto it = temp.begin()-1 + static_cast<int>(nestedIndex);
     int v = 0;
     while (it != temp.begin() - 1) {
         if (*it == temp[nestedIndex]) {
 //                    std::cout << temp[(nestedIndex - v - 1) + 2] << " was added to solver (VARIABLE FOUND)\n";
-            in += temp[(nestedIndex - v - 1) + 2];
-            break;
+            std::cout << "BITCH IS " << temp[(nestedIndex - v - 1) + 2] << '\n';
+            return temp[(nestedIndex - v - 1) + 2];
         } else {
             ++v;
             --it;
@@ -39,7 +39,13 @@ void substituteVariableForValue(std::vector<std::string>& temp, size_t& i, std::
 
 std::optional<int> calculateExpression(std::vector<std::string>& temp, size_t& i, std::vector<Token>& tokens, int doPushBackToken = 1) {
     std::string in;
-    size_t nestedIndex = i + 1; // set nestedIndex to the first num in the expr
+    size_t nestedIndex{};
+    if (doPushBackToken) {
+        nestedIndex = i + 1; // set nestedIndex to the first num in the expr
+    } else {
+        nestedIndex = 0; // set nestedIndex to the first num in the expr
+    }
+
     while (temp[nestedIndex] != ")") {
         if (temp[nestedIndex] >= "0" && temp[nestedIndex] <= "9999") {
 //            std::cout << temp[nestedIndex] << " was added to solver\n";
@@ -47,7 +53,8 @@ std::optional<int> calculateExpression(std::vector<std::string>& temp, size_t& i
         } else if (std::find(op.begin(), op.end(), temp[nestedIndex]) == op.end()
                    && temp[nestedIndex] != "("
                    && temp[nestedIndex] != ")") {
-            substituteVariableForValue(temp, i, tokens, nestedIndex, in);
+            std::string r = substituteVariableForValue(temp, i, tokens, nestedIndex);
+            in += r;
         } else if (std::find(op.begin(), op.end(), temp[nestedIndex]) != op.end()){
 //            std::cout << temp[nestedIndex] << " was added to solver\n";
             in += temp[nestedIndex];
@@ -64,9 +71,9 @@ std::optional<int> calculateExpression(std::vector<std::string>& temp, size_t& i
         tokens.push_back({ .type = TokenType::int_lit, .value = std::to_string(res) });
         temp.erase(temp.begin() + static_cast<int>(i) + 1, temp.begin() + static_cast<int>(nestedIndex) + 1);
         temp[i] = std::to_string(res);
+    } else {
+        return res;
     }
-
-    return res;
 }
 
 class Tokenize {
@@ -124,13 +131,13 @@ public:
                     ++i;
                 }
                 expr.emplace_back(")");
+                auto j = std::stoi(temp[i-expr.size()]);
                 ++i;
-                auto j = std::stoi(temp[i-expr.size()-1]);
                 int res{ 0 };
                 while (j != 0) {
-                    if (auto r = calculateExpression(expr, i, tokens, 0)) {
-                        res += *r;
-                    };
+                    if (auto n = calculateExpression(expr, i, tokens, 0)) {
+                        res += *n;
+                    }
                     --j;
                 }
                 std::cout << "hello";
