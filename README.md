@@ -44,3 +44,16 @@ Edit file
 ```bash
 main.ly
 ```
+
+## Syntax 
+### Basic Syntax
+lightning uses spaces, dots, or commas to separate tokens.
+To calculate an expression or if you want to return a variable use parentheses: `(` and `)`.
+
+### Basic Keywords
+There are some basic keywords in the language right now. </br>
+These include:
+* `буде` -- Declare variables.
+* `якщо` -- Add an `if` statement.
+* `повернути` -- Add a `return` statement and exit the program.
+* `то` -- Does not have a functionality, used primarily for conciseness in language.
